@@ -1,0 +1,213 @@
+private static String generarCalendario(int year, int month, String[][] calendario) throws LanguageCalendarException {
+	        LocalDate firstDateOfMonth = LocalDate.of(year, month, 1);
+	        LocalDate lastDateOfMonth = firstDateOfMonth.with(TemporalAdjusters.lastDayOfMonth());
+	
+	        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd");
+	
+	        String inputLanguage = "";
+	        String outputLanguage = "";
+	        try (BufferedReader reader = new BufferedReader(new FileReader("config.txt"))) {
+	            String line;
+	            for (int i = 0; i < 2; i++) {
+	                line = reader.readLine();
+	                if (line != null) {
+	                    String[] parts = line.trim().split("\\s+");
+	                    if (parts.length > 1) {
+	                        if (i == 0) {
+	                            inputLanguage = parts[1];
+	                        } else {
+	                            outputLanguage = parts[1];
+	                        }
+	                    }
+	                }
+	            }
+	        } catch (IOException e) {
+	            throw new LanguageCalendarException("Error al leer el archivo config.txt", e);
+	        }
+	
+	        String[] daysOfWeek;
+	        String horaTraducida;
+	        String calendarioTraducido;
+	        String semanaTraducida;
+	        try {
+	            daysOfWeek = obtenerTraduccionesDesdeArchivoInternacional("internacional." + outputLanguage, "001");
+	            horaTraducida = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "007");
+	            calendarioTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "008");
+	            semanaTraducida = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "004").split(",")[2]; // Obtener solo "Week"
+	        } catch (IOException e) {
+	            throw new LanguageCalendarException("Error al leer los archivos de traducción", e);
+	        }
+	
+	        StringBuilder htmlBuilder = new StringBuilder();
+	        htmlBuilder.append("<h2>").append(calendarioTraducido).append(" - ").append(Month.of(month)).append(", ").append(year).append("</h2>");
+	
+	        LocalDate weekStartDate = firstDateOfMonth.with(DayOfWeek.MONDAY);
+	
+	        while (!weekStartDate.isAfter(lastDateOfMonth)) {
+	            LocalDate referenceMonday = firstDateOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+	            int weekNumber = (int) ChronoUnit.WEEKS.between(referenceMonday, weekStartDate) + 1;
+	
+	            htmlBuilder.append("<h3>").append(semanaTraducida).append(" ").append(weekNumber).append("</h3>");
+	            htmlBuilder.append("<table>");
+	            htmlBuilder.append("<tr><th>").append(horaTraducida).append("</th>");
+	
+	            for (int i = 0; i < 7; i++) {
+	                LocalDate currentDate = weekStartDate.plusDays(i);
+	                if ((currentDate.isBefore(firstDateOfMonth) || currentDate.isAfter(lastDateOfMonth))) {
+	                    htmlBuilder.append("<th></th>");
+	                } else {
+	                    String dayOfWeek = daysOfWeek[currentDate.getDayOfWeek().getValue() - 1];
+	                    String day = currentDate.format(dayFormatter);
+	                    htmlBuilder.append("<th style=\"background-color: navy; color: white;\">").append(dayOfWeek).append("<br>").append(day).append("</th>");
+	                }
+	            }
+	            htmlBuilder.append("</tr>");
+	            for (int i = 0; i < 24; i++) {
+	                htmlBuilder.append("<style>th.hours-column { width: 90px; background-color: transparent; color: white; }</style>");
+	                htmlBuilder.append("<tr><th class=\"hours-column\"></th>");
+	                htmlBuilder.append("<tr><td class=\"hours-column\">").append(String.format("%02d:00-%02d:00", i, i + 1)).append("</td>");
+	                for (int j = 0; j < 7; j++) {
+	                    htmlBuilder.append("<td style=\"text-align: center;\">");
+	                    if (calendario[weekNumber - 1][(j * 24) + i].startsWith("SPECIAL_REQUEST_")) {
+	                        String peticion = calendario[weekNumber - 1][(j * 24) + i].substring("SPECIAL_REQUEST_".length());
+	                        htmlBuilder.append("<div style=\"background-color: green; color: white;\">").append(peticion).append("</div>");
+	                    } else {
+	                        htmlBuilder.append("<div style=\"background-color: red; color: white;\">").append(calendario[weekNumber - 1][(j * 24) + i]).append("</div>");
+	                    }
+	                    htmlBuilder.append("</td>");
+	                }
+	                htmlBuilder.append("</tr>");
+	            }
+	            htmlBuilder.append("</table>");
+	            weekStartDate = weekStartDate.plusWeeks(1);
+	        }
+	        return htmlBuilder.toString();
+	    }
+	
+	    private static String[] obtenerTraduccionesDesdeArchivoInternacional(String archivo, String seccion) throws IOException, LanguageCalendarException {
+	        String[] traducciones = new String[7];
+	        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+	            String line;
+	            boolean seccionEncontrada = false;
+	            while ((line = reader.readLine()) != null) {
+	                String[] parts = line.trim().split(";");
+	                if (parts.length == 2 && parts[0].equals(seccion)) {
+	                    String[] traduccionesSeparadas = parts[1].split(",");
+	                    if (traduccionesSeparadas.length == 7) {
+	                        System.arraycopy(traduccionesSeparadas, 0, traducciones, 0, 7);
+	                        seccionEncontrada = true;
+	                        break;
+	                    }
+	                }
+	            }
+	            if (!seccionEncontrada) {
+	                throw new LanguageCalendarException("No se encontró la sección " + seccion + " en el archivo " + archivo);
+	            }
+	        }
+	        return traducciones;
+	    }
+	
+	    private static String obtenerTraduccionDesdeArchivoInternacional(String archivo, String seccion) throws IOException, LanguageCalendarException {
+	        String traduccion = "";
+	        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+	            String line;
+	            boolean seccionEncontrada = false;
+	            while ((line = reader.readLine()) != null) {
+	                String[] parts = line.trim().split(";");
+	                if (parts.length == 2 && parts[0].equals(seccion)) {
+	                    traduccion = parts[1];
+	                    seccionEncontrada = true;
+	                    break;
+	                }
+	            }
+	            if (!seccionEncontrada) {
+	                throw new LanguageCalendarException("No se encontró la sección " + seccion + " en el archivo " + archivo);
+	            }
+	        }
+	        return traduccion;
+	    }
+	    /**************************************FIN METODO GENERADOR DE CALENDARIO*****************************************/
+	    
+	    /**************************************METODO GENERADOR DE LOS DATOS DEL CALENDARIO*****************************************/
+	    private static void generarArchivoHTML(String fileName, ArrayList<String> peticionesSala, int year, int month, String fileIncidents, String sala) {
+	        try {
+	            // Leer el idioma de salida del archivo config.txt
+	            String outputLanguage = "";
+	            try (BufferedReader reader = new BufferedReader(new FileReader("config.txt"))) {
+	                String line;
+	                for (int i = 0; i < 2; i++) {
+	                    line = reader.readLine();
+	                    if (line != null) {
+	                        String[] parts = line.trim().split("\\s+");
+	                        if (parts.length > 1) {
+	                            if (i == 1) {
+	                                outputLanguage = parts[1];
+	                            }
+	                        }
+	                    }
+	                }
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+
+	            // Obtener las traducciones correspondientes al idioma de salida
+	            String resultadoTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "010");
+	            String reservasTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "009") + " " + sala;
+	            String resultadoReservaTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "010");
+	            String reservasSalaTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "009");
+
+	            // Obtener traducción de los meses del año
+	            String mesesTraducidos = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "003");
+	            String[] meses = mesesTraducidos.split(",");
+
+	            FileWriter fileWriter = new FileWriter(fileName);
+	            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+	            PrintWriter printWriter = new PrintWriter(bufferedWriter);
+
+	            fileWriter.write("<a href=\"politica.html\">Política del programa / Software Policy </a>\n");
+	            fileWriter.write("<html>\n");
+	            fileWriter.write("<head>\n");
+	            fileWriter.write("<style>body {background-image: url('fotofondo.jpg'); background-repeat: no-repeat; background-size: cover;}</style>\n");
+	            fileWriter.write("<title>Reservas de Sala </title>\n");
+	            fileWriter.write("<style>body {background-color: #F5F5F5; font-family: Arial, sans-serif; color: #333333; margin: 0; padding: 20;} header {background-color: #1E90FF; padding: 15px; text-align: center; color: #FFFFFF;} h1 {font-size: 32px; margin: 0;} .container {max-width: 1200px; margin: 0 auto; padding: 20px;} p {line-height: 1.5;} .feature {display: flex; align-items: center; margin-bottom: 30px;} .feature-icon {width: 50px; height: 50px; margin-right: 20px; background-color: #1E90FF; border-radius: 50%;} .feature-content {flex-grow: 1;} .cta-button {display: inline-block; padding: 10px 20px; background-color: #1E90FF; color: #FFFFFF; text-decoration: none; border-radius: 4px;}</style>\n");
+	            fileWriter.write("<style>table {border-collapse: collapse; width: 100%;}</style>\n");
+	            fileWriter.write("<style>td, th {border: 1px solid black; padding: 8px; text-align: center;}</style>\n");
+	            fileWriter.write("</head>\n");
+	            fileWriter.write("<body>\n");
+	            fileWriter.write("<header>\n");
+	            fileWriter.write("<h1>G_Agenda</h1>\n");
+	            fileWriter.write("</header>\n");
+	            fileWriter.write("<div class=\"container\">\n");
+	            fileWriter.write("<h2 style=\"text-align: center;\">" + resultadoTraducido + "</h2>\n");
+	            fileWriter.write("<h3 style=\"text-align: center;\">" + reservasTraducido + "</h3>\n");
+
+	            String[][] calendario = procesarPeticiones(peticionesSala, year, month, fileIncidents);
+	            String calendarioHTML = generarCalendario(year, month, calendario);
+
+	            fileWriter.write("<div style=\"overflow-x:auto; text-align: center;\">\n"); // Agregar estilo para desplazamiento horizontal y centrado
+	            fileWriter.write(calendarioHTML.replaceFirst(" - [A-Za-z]+,", " - " + meses[month - 1] + ",")); // Reemplazar el nombre del mes en el encabezado del calendario
+	            fileWriter.write("</div>\n");
+
+	            fileWriter.write("<h2 style=\"text-align: center;\">" + resultadoReservaTraducido + "</h2>\n");
+	            fileWriter.write("<h3 style=\"text-align: center;\">" + reservasSalaTraducido + "</h3>\n");
+
+	            FileWriter fileWriter2 = new FileWriter("reservas.txt");
+	            BufferedWriter bufferedWriter2 = new BufferedWriter(fileWriter2);
+	            PrintWriter printWriter2 = new PrintWriter(bufferedWriter2);
+
+	            fileWriter2.write("Reservas de la Sala: " + sala + "\n");
+	            for (String peticion : peticionesSala) {
+	                fileWriter2.write(peticion + "\n");
+	            }
+
+	            fileWriter.write("<a href=\"#\" class=\"cta-button\">Puja, sube, go up</a>\n");
+	            fileWriter.write("</div>\n");
+	            fileWriter.write("</body>\n");
+	            fileWriter.write("</html>\n");
+
+	            fileWriter.close();
+	            fileWriter2.close();
+	        } catch (IOException | LanguageCalendarException e) {
+	            e.printStackTrace();
+	        }
+	    }
