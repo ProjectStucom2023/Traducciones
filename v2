@@ -1,0 +1,605 @@
+	package g_agenda;
+	
+	import java.util.ArrayList;
+	import java.util.Arrays;
+	import java.util.Collections;
+	import java.util.Comparator;
+	import java.util.List;
+	import java.io.FileWriter;
+	import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.DayOfWeek;
+	import java.time.LocalDate;
+	import java.time.temporal.ChronoUnit;
+	import java.time.temporal.TemporalAdjusters;
+	import java.time.Month;
+	import java.time.format.DateTimeFormatter;
+	import java.io.File;
+	import java.io.FileReader;
+	import java.util.Set;
+	import java.util.LinkedHashSet;
+	import java.awt.Desktop;
+	import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.util.HashMap;
+	import java.util.Map;
+	import Exception.LanguageCalendarException;
+	
+	public class Main {
+	     
+	    /*****************************************************************************************************************/
+	    /**************************************************** MAIN *******************************************************/
+		/*****************************************************************************************************************/
+	    
+	    public static void main(String[] args) {
+	        /*Asignamos las variables necesarias para el Main. Los ficheros de peticiones y registro.
+	        En registro se escribiran solo los parametros que son correctos.
+	        Creamos un booleano al que le asignamos LecturaConfig.leerConfi() para que lea todo el
+	        fichero y nos indique si es correcto (true) o incorrecto(false) */
+	        boolean configValido = LecturaConfig.leerConfig();
+	        String fileIncidents = "incidencies.log";
+	        String fileRequest = "peticions.txt";
+	        String fileLog = "registro.log";
+	        LecturaPeticions.leerPeticiones(fileRequest);
+	        File incidenciesFile = new File("incidencies.log");
+		    if (incidenciesFile.exists()) {
+		        incidenciesFile.delete();
+		    } // Borramos el fichero de incidencias en cada ejecucion.
+	        /*Para poder trabajar dentro del main debemos extraer de config.txt el año y el mes.
+	        lo hacemos leyendo esos datos con el metodo leerVariablesConfig*/
+	        
+	        LecturaConfig.leerVariablesConfig();
+	        int month = Integer.parseInt(LecturaConfig.getMonth());
+	        int year = Integer.parseInt(LecturaConfig.getYear());
+	        /*Si el config es valido seguimos el proceso y generamos un mensaje de registro, si el 
+	        no es valido otro en incidencias.log*/
+	        if (configValido) {
+	            /*Usamos el metodo registrar para escribir los mensajes dentro del fichero pertinente*/
+	            LecturaConfig.registrar(fileLog, "NOTICE: Config.txt file is valid" + "\n");
+	            /*Generamos un arraylist para introducir todas las peticiones CORRECTAS que se escriben
+	            en el fichero de registro.log y escribimos una notificacion*/
+	            ArrayList<String> peticionesVerificadas = LecturaPeticions.leerPeticiones(fileRequest);
+	            LecturaConfig.registrar(fileLog, "NOTICE: All of these requests are correct and have passed error "
+	                    + "checking. Those that do not appear have been discarded.");
+	            
+	            //*************************************************************** Internacional *******************************************************************
+	            
+	            /*String idioma = LecturaConfig.getOutLang();
+	            System.out.println(idioma);
+	
+	         // Leer el archivo de idioma correspondiente
+		         String archivoIdioma = "";
+		         if (idioma.equalsIgnoreCase("cat")) {
+		             archivoIdioma = "internacional.cat";
+		         } else if (idioma.equalsIgnoreCase("esp")) {
+		             archivoIdioma = "internacional.esp";
+		         } else if (idioma.equalsIgnoreCase("eng")) {
+		             archivoIdioma = "internacional.eng";
+		         }
+		         Map<String, String> idiomaMap = leerInternacionaloutLANG(archivoIdioma);
+	           
+	        
+	            String titulo = idiomaMap.get("001");
+	            String[] diasSemana = idiomaMap.get("002").split(",");
+	            String diasSemanaAbrev = idiomaMap.get("003");
+	            String[] meses = idiomaMap.get("004").split(",");
+	            String[] etiquetas = idiomaMap.get("005").split(",");
+	            String generatPer = idiomaMap.get("006");
+	            String tancat = idiomaMap.get("007");
+	            String error = idiomaMap.get("008");
+	
+	            // Ejemplo de uso:
+	            System.out.println("Titulo: " + titulo);
+	            System.out.println("Dias de la semana: " + Arrays.toString(diasSemana));
+	            System.out.println("Dias de la semana (abreviados): " + diasSemanaAbrev);
+	            System.out.println("Meses: " + Arrays.toString(meses));
+	            System.out.println("Etiquetas: " + Arrays.toString(etiquetas));
+	            System.out.println("Generado por: " + generatPer);
+	            System.out.println("Tancat: " + tancat);
+	            System.out.println("Error: " + error);*/
+	
+	            
+	            
+	            
+	            //***************************************************************************************************************************************************
+	            
+	            
+	            
+	            /*En este caso solo queremos 5 salas, asi que creamos una Lista con el nombre de las salas posibles
+	            Como sala es en CAT y ESP usamos la misma y en ingles obtamos por SpaceX. */
+	            List<String> nombresDeSalas = Arrays.asList("Sala1", "Sala2", "Sala3", "Sala4", "Sala5", "Space1", "Space2", "Space3", "Space4", "Space5");
+	            System.out.println("\n" + "VERIFIED REQUEST AND PRIORITY DONE ");
+	            System.out.println("_____________________________________________________________");
+	
+	            for (String sala : nombresDeSalas) {
+	                ArrayList<String> peticionesPorSala = obtenerPeticionesPorSala(peticionesVerificadas, sala);
+	                if (!peticionesPorSala.isEmpty()) {
+	                    String peticionesFormateadas = String.join("\n", peticionesPorSala);
+	                    System.out.println("Requests refered to " + sala + ":\n" + peticionesFormateadas);
+	                    //Generamos el nombreArchivoHTML con el numero pertinente, añadiendo la extension html.
+	                    String nombreArchivoHTML = sala.toLowerCase() + ".html";
+	                    generarArchivoHTML(nombreArchivoHTML, peticionesPorSala, year, month, fileIncidents,sala);
+	                    abrirArchivoHTML(nombreArchivoHTML);
+	                    
+	                }
+	            }
+	        } else {
+	            /* Si el config no es correcte, registramos este mensaje dentro de incidencies.log */
+	            LecturaConfig.registrar(fileIncidents, "WARNING: Config.txt file is NOT valid. Correct it to be able to process the requests");
+	        }
+	    }
+	    /*****************************************************************************************************************/
+	    /*************************************************** METODOS *****************************************************/
+	    /*****************************************************************************************************************/
+	    
+	    //Abre directamente en pantalla los archivos html de cada sala
+	    private static void abrirArchivoHTML(String nombreArchivoHTML) {
+	        try {
+	            File archivo = new File(nombreArchivoHTML);
+	            if (archivo.exists()) {
+	                Desktop.getDesktop().browse(archivo.toURI());
+	            } else {
+	                System.out.println("El archivo no existe: " + nombreArchivoHTML);
+	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	    
+	    /*********************************METODO OBTENCION PETICIONES POR SALA********************************************/
+	    
+	    /*Con este metodo creamos un arrayList solo con las peticiones de cada una de las salas*/
+	    private static ArrayList<String> obtenerPeticionesPorSala(ArrayList<String> peticiones, String sala) {
+	        ArrayList<String> peticionesSala = new ArrayList<>();
+	        for (String peticion : peticiones) {
+	            if (peticion.toLowerCase().contains(sala.toLowerCase())) {
+	                peticionesSala.add(peticion);
+	            }
+	        }
+	        /*Usamos el collections.sort para que ordene las peticiones segun la prioridad, primero siempre las que son cerradas,tancat o closed,
+	         * que son las primeras a reservar y luego reuniones de java delante del resto*/
+	        Collections.sort(peticionesSala, new Comparator<String>() {
+	            public int compare(String p1, String p2) {
+	                String p1Lower = p1.toLowerCase();
+	                String p2Lower = p2.toLowerCase();
+	                if ((p1Lower.startsWith("tancat") || p1Lower.startsWith("cerrado") || p1Lower.startsWith("closed"))
+	                        && !(p2Lower.startsWith("tancat") || p2Lower.startsWith("cerrado") || p2Lower.startsWith("closed"))) {
+	                    return -1;
+	                } else if (!(p1Lower.startsWith("tancat") || p1Lower.startsWith("cerrado") || p1Lower.startsWith("closed"))
+	                        && (p2Lower.startsWith("tancat") || p2Lower.startsWith("cerrado") || p2Lower.startsWith("closed"))) {
+	                    return 1;
+	                } else if ((p1Lower.startsWith("meetingjava") || p1Lower.startsWith("reuniojava") || p1Lower.startsWith("reunionjava"))
+	                        && !(p2Lower.startsWith("meetingjava") || p2Lower.startsWith("reuniojava") || p2Lower.startsWith("reunionjava"))) {
+	                    return -1;
+	                } else if (!(p1Lower.startsWith("meetingjava") || p1Lower.startsWith("reuniojava") || p1Lower.startsWith("reunionjava"))
+	                        && (p2Lower.startsWith("meetingjava") || p2Lower.startsWith("reuniojava") || p2Lower.startsWith("reunionjava"))) {
+	                    return 1;
+	                }
+	                return p1.compareToIgnoreCase(p2);
+	            }
+	        });
+	        return peticionesSala;
+	    }
+	    /***************************************FIN METODO PETICIONES POR SALA********************************************/
+	    
+	    
+	    /*************************************METODO GENERADOR DE CALENDARIO**********************************************/
+	    /*El método generarCalendario recibe el año, mes y una matriz de calendario como argumentos. Crea un calendario HTML
+	    para el mes y año especificados utilizando los datos de la matriz de calendario. 
+	    Propósito: Este método genera el contenido del calendario en formato HTML para un mes y año específico.
+		Parámetros de entrada: Recibe el año, el mes y una matriz de calendario como argumentos.
+		Funcionalidad:
+		Calcula la fecha de inicio y fin del mes.
+		Crea una cadena de texto en formato HTML que representa el calendario.
+		Itera por cada semana del mes y por cada día de la semana.
+		Obtiene la fecha actual.
+		Verifica si la fecha actual está dentro del rango del mes y año especificados.
+		Si es así, agrega el encabezado de la semana y las celdas de cada día al contenido del calendario.
+		Para cada hora del día, verifica el contenido de la matriz de calendario y agrega la información correspondiente al 
+		contenido del calendario.
+		Devuelve la cadena de texto con el contenido del calendario.
+		Resultado: El método devuelve una cadena de texto en formato HTML que representa el calendario para el mes y año especificados.*/
+	    
+	    private static String generarCalendario(int year, int month, String[][] calendario) throws LanguageCalendarException {
+	        LocalDate firstDateOfMonth = LocalDate.of(year, month, 1);
+	        LocalDate lastDateOfMonth = firstDateOfMonth.with(TemporalAdjusters.lastDayOfMonth());
+	
+	        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd");
+	
+	        String inputLanguage = "";
+	        String outputLanguage = "";
+	        try (BufferedReader reader = new BufferedReader(new FileReader("config.txt"))) {
+	            String line;
+	            for (int i = 0; i < 2; i++) {
+	                line = reader.readLine();
+	                if (line != null) {
+	                    String[] parts = line.trim().split("\\s+");
+	                    if (parts.length > 1) {
+	                        if (i == 0) {
+	                            inputLanguage = parts[1];
+	                        } else {
+	                            outputLanguage = parts[1];
+	                        }
+	                    }
+	                }
+	            }
+	        } catch (IOException e) {
+	            throw new LanguageCalendarException("Error al leer el archivo config.txt", e);
+	        }
+	
+	        String[] daysOfWeek;
+	        String horaTraducida;
+	        String calendarioTraducido;
+	        String semanaTraducida;
+	        try {
+	            daysOfWeek = obtenerTraduccionesDesdeArchivoInternacional("internacional." + outputLanguage, "001");
+	            horaTraducida = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "007");
+	            calendarioTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "008");
+	            semanaTraducida = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "004").split(",")[2]; // Obtener solo "Week"
+	        } catch (IOException e) {
+	            throw new LanguageCalendarException("Error al leer los archivos de traducción", e);
+	        }
+	
+	        StringBuilder htmlBuilder = new StringBuilder();
+	        htmlBuilder.append("<h2>").append(calendarioTraducido).append(" - ").append(Month.of(month)).append(", ").append(year).append("</h2>");
+	
+	        LocalDate weekStartDate = firstDateOfMonth.with(DayOfWeek.MONDAY);
+	
+	        while (!weekStartDate.isAfter(lastDateOfMonth)) {
+	            LocalDate referenceMonday = firstDateOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+	            int weekNumber = (int) ChronoUnit.WEEKS.between(referenceMonday, weekStartDate) + 1;
+	
+	            htmlBuilder.append("<h3>").append(semanaTraducida).append(" ").append(weekNumber).append("</h3>");
+	            htmlBuilder.append("<table>");
+	            htmlBuilder.append("<tr><th>").append(horaTraducida).append("</th>");
+	
+	            for (int i = 0; i < 7; i++) {
+	                LocalDate currentDate = weekStartDate.plusDays(i);
+	                if ((currentDate.isBefore(firstDateOfMonth) || currentDate.isAfter(lastDateOfMonth))) {
+	                    htmlBuilder.append("<th></th>");
+	                } else {
+	                    String dayOfWeek = daysOfWeek[currentDate.getDayOfWeek().getValue() - 1];
+	                    String day = currentDate.format(dayFormatter);
+	                    htmlBuilder.append("<th style=\"background-color: navy; color: white;\">").append(dayOfWeek).append("<br>").append(day).append("</th>");
+	                }
+	            }
+	            htmlBuilder.append("</tr>");
+	            for (int i = 0; i < 24; i++) {
+	                htmlBuilder.append("<style>th.hours-column { width: 90px; background-color: transparent; color: white; }</style>");
+	                htmlBuilder.append("<tr><th class=\"hours-column\"></th>");
+	                htmlBuilder.append("<tr><td class=\"hours-column\">").append(String.format("%02d:00-%02d:00", i, i + 1)).append("</td>");
+	                for (int j = 0; j < 7; j++) {
+	                    htmlBuilder.append("<td style=\"text-align: center;\">");
+	                    if (calendario[weekNumber - 1][(j * 24) + i].startsWith("SPECIAL_REQUEST_")) {
+	                        String peticion = calendario[weekNumber - 1][(j * 24) + i].substring("SPECIAL_REQUEST_".length());
+	                        htmlBuilder.append("<div style=\"background-color: green; color: white;\">").append(peticion).append("</div>");
+	                    } else {
+	                        htmlBuilder.append("<div style=\"background-color: red; color: white;\">").append(calendario[weekNumber - 1][(j * 24) + i]).append("</div>");
+	                    }
+	                    htmlBuilder.append("</td>");
+	                }
+	                htmlBuilder.append("</tr>");
+	            }
+	            htmlBuilder.append("</table>");
+	            weekStartDate = weekStartDate.plusWeeks(1);
+	        }
+	        return htmlBuilder.toString();
+	    }
+	
+	    private static String[] obtenerTraduccionesDesdeArchivoInternacional(String archivo, String seccion) throws IOException, LanguageCalendarException {
+	        String[] traducciones = new String[7];
+	        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+	            String line;
+	            boolean seccionEncontrada = false;
+	            while ((line = reader.readLine()) != null) {
+	                String[] parts = line.trim().split(";");
+	                if (parts.length == 2 && parts[0].equals(seccion)) {
+	                    String[] traduccionesSeparadas = parts[1].split(",");
+	                    if (traduccionesSeparadas.length == 7) {
+	                        System.arraycopy(traduccionesSeparadas, 0, traducciones, 0, 7);
+	                        seccionEncontrada = true;
+	                        break;
+	                    }
+	                }
+	            }
+	            if (!seccionEncontrada) {
+	                throw new LanguageCalendarException("No se encontró la sección " + seccion + " en el archivo " + archivo);
+	            }
+	        }
+	        return traducciones;
+	    }
+	
+	    private static String obtenerTraduccionDesdeArchivoInternacional(String archivo, String seccion) throws IOException, LanguageCalendarException {
+	        String traduccion = "";
+	        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+	            String line;
+	            boolean seccionEncontrada = false;
+	            while ((line = reader.readLine()) != null) {
+	                String[] parts = line.trim().split(";");
+	                if (parts.length == 2 && parts[0].equals(seccion)) {
+	                    traduccion = parts[1];
+	                    seccionEncontrada = true;
+	                    break;
+	                }
+	            }
+	            if (!seccionEncontrada) {
+	                throw new LanguageCalendarException("No se encontró la sección " + seccion + " en el archivo " + archivo);
+	            }
+	        }
+	        return traduccion;
+	    }
+	    /**************************************FIN METODO GENERADOR DE CALENDARIO*****************************************/
+	    
+	    /**************************************METODO GENERADOR DE LOS DATOS DEL CALENDARIO*****************************************/
+	   /*El método generarArchivoHTML recibe el nombre del archivo, una lista de peticiones para una sala específica, el año, el mes
+	    y el nombre del archivo de incidencias como argumentos. Genera un archivo HTML con el nombre especificado y el contenido 
+	    correspondiente, incluido el calendario.
+	    Propósito: Este método se encarga de generar el archivo HTML completo que representa el calendario con las peticiones de una sala específica.
+		Parámetros de entrada: Recibe el nombre del archivo, una lista de peticiones para una sala específica, el año, el mes y el nombre del archivo de incidencias.
+		Funcionalidad:
+		Crea un archivo HTML.
+		Escribe el encabezado y el título del archivo HTML.
+		Genera el contenido del calendario utilizando el método generarCalendario.
+		Escribe el contenido del calendario en el archivo HTML.
+		Escribe el cierre del archivo HTML.
+		Resultado: El método genera un archivo HTML completo con el nombre especificado, incluyendo el contenido del calendario.
+	    */
+	    
+	    
+	    private static void generarArchivoHTML(String fileName, ArrayList<String> peticionesSala, int year, int month, String fileIncidents, String sala) {
+	        try {
+	            // Leer el idioma de salida del archivo config.txt
+	            String outputLanguage = "";
+	            try (BufferedReader reader = new BufferedReader(new FileReader("config.txt"))) {
+	                String line;
+	                for (int i = 0; i < 2; i++) {
+	                    line = reader.readLine();
+	                    if (line != null) {
+	                        String[] parts = line.trim().split("\\s+");
+	                        if (parts.length > 1) {
+	                            if (i == 1) {
+	                                outputLanguage = parts[1];
+	                            }
+	                        }
+	                    }
+	                }
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+
+	            // Obtener las traducciones correspondientes al idioma de salida
+	            String resultadoTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "010");
+	            String reservasTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "009") + " " + sala;
+	            String resultadoReservaTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "010");
+	            String reservasSalaTraducido = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "009");
+
+	            // Obtener traducción de los meses del año
+	            String mesesTraducidos = obtenerTraduccionDesdeArchivoInternacional("internacional." + outputLanguage, "003");
+	            String[] meses = mesesTraducidos.split(",");
+
+	            FileWriter fileWriter = new FileWriter(fileName);
+	            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+	            PrintWriter printWriter = new PrintWriter(bufferedWriter);
+
+	            fileWriter.write("<a href=\"politica.html\">Política del programa / Software Policy </a>\n");
+	            fileWriter.write("<html>\n");
+	            fileWriter.write("<head>\n");
+	            fileWriter.write("<style>body {background-image: url('fotofondo.jpg'); background-repeat: no-repeat; background-size: cover;}</style>\n");
+	            fileWriter.write("<title>Reservas de Sala </title>\n");
+	            fileWriter.write("<style>body {background-color: #F5F5F5; font-family: Arial, sans-serif; color: #333333; margin: 0; padding: 20;} header {background-color: #1E90FF; padding: 15px; text-align: center; color: #FFFFFF;} h1 {font-size: 32px; margin: 0;} .container {max-width: 1200px; margin: 0 auto; padding: 20px;} p {line-height: 1.5;} .feature {display: flex; align-items: center; margin-bottom: 30px;} .feature-icon {width: 50px; height: 50px; margin-right: 20px; background-color: #1E90FF; border-radius: 50%;} .feature-content {flex-grow: 1;} .cta-button {display: inline-block; padding: 10px 20px; background-color: #1E90FF; color: #FFFFFF; text-decoration: none; border-radius: 4px;}</style>\n");
+	            fileWriter.write("<style>table {border-collapse: collapse; width: 100%;}</style>\n");
+	            fileWriter.write("<style>td, th {border: 1px solid black; padding: 8px; text-align: center;}</style>\n");
+	            fileWriter.write("</head>\n");
+	            fileWriter.write("<body>\n");
+	            fileWriter.write("<header>\n");
+	            fileWriter.write("<h1>G_Agenda</h1>\n");
+	            fileWriter.write("</header>\n");
+	            fileWriter.write("<div class=\"container\">\n");
+	            fileWriter.write("<h2 style=\"text-align: center;\">" + resultadoTraducido + "</h2>\n");
+	            fileWriter.write("<h3 style=\"text-align: center;\">" + reservasTraducido + "</h3>\n");
+
+	            String[][] calendario = procesarPeticiones(peticionesSala, year, month, fileIncidents);
+	            String calendarioHTML = generarCalendario(year, month, calendario);
+
+	            fileWriter.write("<div style=\"overflow-x:auto; text-align: center;\">\n"); // Agregar estilo para desplazamiento horizontal y centrado
+	            fileWriter.write(calendarioHTML.replaceFirst(" - [A-Za-z]+,", " - " + meses[month - 1] + ",")); // Reemplazar el nombre del mes en el encabezado del calendario
+	            fileWriter.write("</div>\n");
+
+	            fileWriter.write("<h2 style=\"text-align: center;\">" + resultadoReservaTraducido + "</h2>\n");
+	            fileWriter.write("<h3 style=\"text-align: center;\">" + reservasSalaTraducido + "</h3>\n");
+
+	            FileWriter fileWriter2 = new FileWriter("reservas.txt");
+	            BufferedWriter bufferedWriter2 = new BufferedWriter(fileWriter2);
+	            PrintWriter printWriter2 = new PrintWriter(bufferedWriter2);
+
+	            fileWriter2.write("Reservas de la Sala: " + sala + "\n");
+	            for (String peticion : peticionesSala) {
+	                fileWriter2.write(peticion + "\n");
+	            }
+
+	            fileWriter.write("<a href=\"#\" class=\"cta-button\">Puja, sube, go up</a>\n");
+	            fileWriter.write("</div>\n");
+	            fileWriter.write("</body>\n");
+	            fileWriter.write("</html>\n");
+
+	            fileWriter.close();
+	            fileWriter2.close();
+	        } catch (IOException | LanguageCalendarException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	
+	    /**************************************FIN METODO GENERARARCHIVO HTML*****************************************/
+	
+	    /**************************************METODO OBTENER NUMERO DE SEMANAS EN UN MES***********************************/
+	    //El método obtenerNumeroSemanas recibe una fecha de inicio y una fecha de fin como argumentos y calcula el
+	    //número de semanas entre esas fechas.
+	    private static int obtenerNumeroSemanas(LocalDate fechaInicio, LocalDate fechaFin) {
+	        
+	        int numeroSemanas = 0;
+	        LocalDate currentDay = fechaInicio;
+	
+	        while (!currentDay.isAfter(fechaFin)) {
+	            numeroSemanas++;
+	            currentDay = currentDay.plusDays(1);
+	        }
+	        return (numeroSemanas + 6) / 7;
+	    }
+	
+	    /********************************FIN METODO OBTENER NUMERO DE SEMANAS EN UN MES*******************************/
+	    
+	    
+	    /****************************************METODO PROCESAMIENTO PETICIONES**************************************/
+	    // El método procesarPeticiones recibe una lista de peticiones, el año, el mes y el nombre del archivo de incidencias
+	    //como argumentos. Procesa las peticiones y genera una matriz de calendario con las reservas correspondientes.
+	  
+	    private static String[][] procesarPeticiones(ArrayList<String> peticiones, int year, int month, String fileIncidents) {
+	        LocalDate firstDateOfMonth = LocalDate.of(year, month, 1);
+	        LocalDate lastDateOfMonth = firstDateOfMonth.with(TemporalAdjusters.lastDayOfMonth());
+	        LocalDate referenceMonday = firstDateOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+	        int totalWeeks = obtenerNumeroSemanas(referenceMonday, lastDateOfMonth);
+	        String[][] calendario = new String[totalWeeks][7 * 24];
+	        for (int i = 0; i < totalWeeks; i++) {
+	            for (int j = 0; j < 7 * 24; j++) {
+	                calendario[i][j] = "";
+	            }
+	        }
+	
+	        try (FileWriter fileWriter = new FileWriter(fileIncidents, true)) {
+	            // Al utilizar un LinkedHashSet, los mensajes de error se almacenarán en el orden en el que se agregaron 
+	        	//y se eliminarán las repeticiones. Así, al escribirlos en el archivo "incidencies.log", no deberías tener 
+	        	//duplicados.
+	        	Set<String> errorMessages = new LinkedHashSet<>(); 
+	        	
+	
+	            for (String peticion : peticiones) {
+	                String[] campos = peticion.split(" ");
+	                String nombrePeticion = campos[0];
+	                if (nombrePeticion.equalsIgnoreCase("tancat") || nombrePeticion.equalsIgnoreCase("cerrado") || nombrePeticion.equalsIgnoreCase("closed")) {
+	                    nombrePeticion = "SPECIAL_REQUEST_" + nombrePeticion;
+	                }
+	                String fechaInicio = campos[2];
+	                String fechaFin = campos[3];
+	                String dias = campos[4];
+	                String horas = campos[5];
+	                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	                LocalDate fechaInicioLD = LocalDate.parse(fechaInicio, formatter);
+	                LocalDate fechaFinLD = LocalDate.parse(fechaFin, formatter);
+	                String[] rangosHoras = horas.split("_");
+	
+	                if ((fechaInicioLD.isBefore(lastDateOfMonth) && fechaFinLD.isAfter(firstDateOfMonth))
+	                        || (fechaInicioLD.isEqual(firstDateOfMonth) || fechaFinLD.isEqual(lastDateOfMonth))) {
+	
+	                    List<DayOfWeek> diasDeLaSemana = new ArrayList<>();
+	                    for (char dia : dias.toCharArray()) {
+	                        switch (dia) {
+	                            case 'L':
+	                                diasDeLaSemana.add(DayOfWeek.MONDAY);
+	                                break;
+	                            case 'M':
+	                                diasDeLaSemana.add(DayOfWeek.TUESDAY);
+	                                break;
+	                            case 'C':
+	                                diasDeLaSemana.add(DayOfWeek.WEDNESDAY);
+	                                break;
+	                            case 'J':
+	                                diasDeLaSemana.add(DayOfWeek.THURSDAY);
+	                                break;
+	                            case 'V':
+	                                diasDeLaSemana.add(DayOfWeek.FRIDAY);
+	                                break;
+	                            case 'S':
+	                                diasDeLaSemana.add(DayOfWeek.SATURDAY);
+	                                break;
+	                            case 'G':
+	                                diasDeLaSemana.add(DayOfWeek.SUNDAY);
+	                                break;
+	                        }
+	                    }
+	
+	                    for (int week = 0; week < totalWeeks; week++) {
+	                        for (int dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+	                            LocalDate currentDay = referenceMonday.plusWeeks(week).plusDays(dayOfWeek);
+	
+	                            if (diasDeLaSemana.contains(currentDay.getDayOfWeek())) {
+	                                if (!currentDay.isBefore(fechaInicioLD) && !currentDay.isAfter(fechaFinLD)) {
+	                                    for (String rangoHora : rangosHoras) {
+	                                        String[] horasInicioFin = rangoHora.split("-");
+	                                        int horaInicio = Integer.parseInt(horasInicioFin[0]);
+	                                        int horaFin = Integer.parseInt(horasInicioFin[1]) - 1; // Disminuir horaFin en 1
+	                                        
+	                                        for (int hour = horaInicio; hour <= horaFin; hour++) {
+	                                            int index = (dayOfWeek * 24) + hour;
+	                                            
+	                                            try {
+	                                            		if (calendario[week][index].isEmpty()) {
+	                                                    calendario[week][index] = nombrePeticion;
+	                                           } else {
+	                                        	   		if (!calendario[week][index].startsWith("ERROR:"))
+	                                        	   		{       
+	                                        	   			errorMessages.add("Requests annulled in part or completely. Remember that Java meetings take precedence");	
+	                                        	   			errorMessages.add("------------------------------------------------------------------------------------ ");	
+	                                                    		String errorMessage = "ERROR: The request " + nombrePeticion +
+	                                                                " cannot book from " + hour + " to " + (hour + 1) +
+	                                                                " because that time is already reserved. Try looking for another time ";
+	                                                        errorMessages.add(errorMessage);
+	                                                        calendario[week][index] = calendario[week][index];
+	                                                    }
+	                                                    break; // Salir del bucle si se encuentra un error
+	                                                }
+	                                            } catch (ArrayIndexOutOfBoundsException e) {
+	                                                System.out.println("Error processing request " + nombrePeticion);
+	                                                System.out.println("week: " + week + ", index: " + index);
+	                                                continue;
+	                                            }
+	                                        }
+	                                    }
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	
+	            
+	            // Escribir los mensajes de error únicos en el archivo
+	            for (String errorMessage : errorMessages) {
+	                fileWriter.write(errorMessage + "\n");
+	            }
+	        
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	        
+	        return calendario;
+	    }
+	
+	    //Con este metodo leemos los paramtros de los archivos de idiomas
+	    private static Map<String, String> leerInternacionaloutLANG(String nombreArchivoIdioma) {
+	        Map<String, String> idiomaMap = new HashMap<>();
+	
+	        try (BufferedReader br = new BufferedReader(new FileReader(nombreArchivoIdioma))) {
+	            String linea;
+	            while ((linea = br.readLine()) != null) {
+	                String[] partes = linea.split(";", 2);
+	                if (partes.length == 2) {
+	                    String clave = partes[0].trim();
+	                    String valor = partes[1].trim();
+	                    idiomaMap.put(clave, valor);
+	                }
+	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	
+	        return idiomaMap;
+	    }
+	    
+	    
+	    
+	
+	    /****************************************FIN METODO PROCESAMIENTO PETICIONES**************************************/   
+	    
+	    
+	}
