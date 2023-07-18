@@ -1,0 +1,39 @@
+internacional.CAT
+
+001;Dilluns,Dimarts,Dimecres,Dijous,Divendres,Dissabte,Diumenge
+002;LMCJVSG 
+003;Gener,Febrer,Març,Abril,Maig,Juny,Juliol,Agost,Setembre,Octubre,Novembre,Desembre
+004;Any,Mes,Setmana,Dia
+005;Tancat 
+006;Error
+007;Hora
+008;Calendari
+009;Reserves de la
+010;Resultat de la reserva de peticions
+
+internacional.ENG
+
+001;Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday
+002;LMCJVSG
+003;January,February,March,April,May,June,July,August,September,October,November,December
+004;Year,Month,Week,Day
+005;Closed 
+006;Error
+007;Hour
+008;Calendar
+009;Reservations of the
+010;Result of request reservation
+
+
+internacional.ESP
+
+001;Lunes,Martes,Miercoles,Jueves,Viernes,Sabado,Domingo
+002;LMCJVSG 
+003;Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre
+004;Año,Mes,Semana,Dia
+005;Cerrado 
+006;Error
+007;Hora
+008;Calendario
+009;Reservas de 
+010;Resultado de la reserva de peticiones
