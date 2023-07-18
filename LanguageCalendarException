@@ -1,0 +1,11 @@
+package Exception;
+
+public class LanguageCalendarException extends Exception {
+    public LanguageCalendarException(String message) {
+        super(message);
+    }
+
+    public LanguageCalendarException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
