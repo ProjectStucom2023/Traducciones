@@ -21,3 +21,8 @@ Al final de cada iteración del bucle, se incrementa la fecha de inicio de la se
 Finalmente, se cierran las etiquetas HTML y se devuelve la cadena HTML completa como resultado.
 
 En resumen, el método `generarCalendario` toma los datos de un calendario y genera una representación en formato HTML. Utiliza las traducciones adecuadas según el idioma especificado en el archivo de configuración y aplica estilos y colores apropiados a las celdas del calendario.
+
+
+# A tener en cuenta.
+
+Existen 2 metodos `obtenerTraduccionesDesdeArchivoInternacional`, no obstante un metodo lee las traducciones desde un archivo internacional y devuelve un arreglo de traducciones para los días de la semana (un arreglo de 7 elementos). Y el otro método lee las traducciones desde un archivo internacional y devuelve una traducción específica (una sola cadena).
